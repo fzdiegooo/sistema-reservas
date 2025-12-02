@@ -55,6 +55,7 @@ export default function DashboardPage() {
     { type: "success" | "error"; message: string } | null
   >(null);
   const [calendarLink, setCalendarLink] = useState<string | null>(null);
+  const [calendarModalOpen, setCalendarModalOpen] = useState(false);
 
   useEffect(() => {
     if (!reservationStatus) return;
@@ -186,6 +187,7 @@ export default function DashboardPage() {
     if (!token) return;
     setReservationStatus(null);
     setCalendarLink(null);
+    setCalendarModalOpen(false);
     try {
       await api.createReservation(token, reservationForm);
       const roomName =
@@ -203,6 +205,7 @@ export default function DashboardPage() {
         const summary = `Reserva sala ${roomName}`;
         const details = formatCalendarDetails(reservationForm, roomName);
         setCalendarLink(createGoogleCalendarLink(summary, startDate, endDate, details));
+        setCalendarModalOpen(true);
       }
       setReservationForm(createReservationForm());
       setReservationStatus({ type: "success", message: "Reserva generada" });
@@ -415,16 +418,6 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          {calendarLink && reservationStatus?.type === "success" && (
-            <a
-              href={calendarLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center justify-center rounded-2xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white"
-            >
-              Agregar a Google Calendar
-            </a>
-          )}
 
           <form className="mt-6 space-y-4" onSubmit={handleReservationSubmit}>
             <div>
@@ -760,6 +753,39 @@ export default function DashboardPage() {
           </table>
         </div>
         </section>
+      )}
+
+      {calendarModalOpen && calendarLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="glass-panel w-full max-w-lg rounded-3xl p-6">
+            <h3 className="text-2xl font-semibold text-slate-900">
+              Reserva creada
+            </h3>
+            <p className="mt-2 text-sm text-slate-500">
+              Puedes añadir este evento a tu Google Calendar para no olvidarlo.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <a
+                href={calendarLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 rounded-2xl bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-primary-strong"
+              >
+                Abrir en Google Calendar
+              </a>
+              <button
+                type="button"
+                className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700"
+                onClick={() => {
+                  setCalendarModalOpen(false);
+                  setCalendarLink(null);
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

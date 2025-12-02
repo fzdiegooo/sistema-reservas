@@ -56,6 +56,8 @@ export default function DashboardPage() {
   >(null);
   const [calendarLink, setCalendarLink] = useState<string | null>(null);
   const [calendarModalOpen, setCalendarModalOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [reservationDetailModalOpen, setReservationDetailModalOpen] = useState(false);
 
   useEffect(() => {
     if (!reservationStatus) return;
@@ -138,6 +140,16 @@ export default function DashboardPage() {
       return date.getTime() >= now;
     });
   }, [history]);
+
+  const showReservationDetail = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setReservationDetailModalOpen(true);
+  };
+
+  const closeReservationDetail = () => {
+    setReservationDetailModalOpen(false);
+    setSelectedReservation(null);
+  };
 
   const handleCreateRoom = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -636,6 +648,7 @@ export default function DashboardPage() {
                     <th className="px-4 py-2">Fecha</th>
                     <th className="px-4 py-2">Horario</th>
                     <th className="px-4 py-2">Estado</th>
+                    <th className="px-4 py-2">Detalle</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -661,11 +674,20 @@ export default function DashboardPage() {
                           {reservation.estado ?? "Solicitada"}
                         </span>
                       </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          className="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-primary hover:text-primary"
+                          onClick={() => showReservationDetail(reservation)}
+                        >
+                          Ver
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {!historyLoading && !history.length && (
                     <tr>
-                      <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
+                      <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
                         Aún no hay reservas registradas.
                       </td>
                     </tr>
@@ -720,6 +742,7 @@ export default function DashboardPage() {
                 <th className="px-4 py-2">Horario</th>
                 <th className="px-4 py-2">Solicitante</th>
                 <th className="px-4 py-2">Estado</th>
+                <th className="px-4 py-2">Detalle</th>
               </tr>
             </thead>
             <tbody>
@@ -733,18 +756,27 @@ export default function DashboardPage() {
                     {formatHour(reservation.horaInicio)} - {formatHour(reservation.horaFin)}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
-                    {reservation.usuario?.username ?? "-"}
+                    {reservation.usuario?.username ?? reservation.user?.username ?? "-"}
                   </td>
                   <td className="px-4 py-3">
                     <span className="rounded-full bg-surface-alt px-3 py-1 text-xs font-semibold text-slate-700">
                       {reservation.estado ?? (isAdmin ? "Pendiente" : "Solicitada")}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      className="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-primary hover:text-primary"
+                      onClick={() => showReservationDetail(reservation)}
+                    >
+                      Ver
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!historyLoading && !history.length && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
                     Aún no hay reservas registradas.
                   </td>
                 </tr>
@@ -784,6 +816,71 @@ export default function DashboardPage() {
                 Cerrar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {reservationDetailModalOpen && selectedReservation && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div className="glass-panel w-full max-w-2xl rounded-3xl p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                  Reserva #{selectedReservation.id}
+                </p>
+                <h3 className="text-2xl font-semibold text-slate-900">
+                  {selectedReservation.sala?.nombre ?? "Sala sin nombre"}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {formatDate(selectedReservation.fecha)} ·
+                  {" "}
+                  {formatHour(selectedReservation.horaInicio)} - {formatHour(selectedReservation.horaFin)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
+                onClick={closeReservationDetail}
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/40 bg-surface-alt px-4 py-3">
+                <dt className="text-xs font-semibold uppercase text-slate-500">Encargado</dt>
+                <dd className="text-sm font-medium text-slate-900">
+                  {`${selectedReservation.nombresEncargado ?? "-"} ${selectedReservation.apellidosEncargado ?? ""}`.trim() || "-"}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-white/40 bg-surface-alt px-4 py-3">
+                <dt className="text-xs font-semibold uppercase text-slate-500">DNI</dt>
+                <dd className="text-sm font-medium text-slate-900">
+                  {selectedReservation.dniEncargado ?? "-"}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-white/40 bg-surface-alt px-4 py-3">
+                <dt className="text-xs font-semibold uppercase text-slate-500">Asistentes</dt>
+                <dd className="text-sm font-medium text-slate-900">
+                  {selectedReservation.asistentes || "No especificado"}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-white/40 bg-surface-alt px-4 py-3">
+                <dt className="text-xs font-semibold uppercase text-slate-500">Creado por</dt>
+                <dd className="text-sm font-medium text-slate-900">
+                  {selectedReservation.usuario?.username ?? selectedReservation.user?.username ?? "-"}
+                </dd>
+              </div>
+            </dl>
+
+            {selectedReservation.descripcion && (
+              <div className="mt-6 rounded-3xl border border-white/40 bg-surface-alt px-4 py-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Descripción</p>
+                <p className="mt-2 text-sm text-slate-800 whitespace-pre-line">
+                  {selectedReservation.descripcion}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

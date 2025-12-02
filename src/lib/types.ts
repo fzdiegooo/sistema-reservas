@@ -34,6 +34,13 @@ export interface Reservation {
     id?: string;
     username: string;
   };
+  user?: {
+    id?: string;
+    username: string;
+    nombres?: string;
+    apellidos?: string;
+    role?: UserRole;
+  };
 }
 
 export interface CredentialsPayload {

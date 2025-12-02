@@ -8,6 +8,8 @@ import { api } from "@/lib/api";
 import { Reservation, ReservationPayload, Room } from "@/lib/types";
 import ToastNotification from "@/app/ui/ToastNotification";
 
+const today = new Date().toISOString().split('T')[0];
+
 const reservationTemplate: ReservationPayload = {
   salaId: "",
   fecha: "",
@@ -444,18 +446,19 @@ export default function DashboardPage() {
                   Fecha
                 </label>
                 <input
-                  id="fecha"
-                  type="date"
-                  required
-                  value={reservationForm.fecha}
-                  onChange={(event) =>
-                    setReservationForm((prev) => ({
-                      ...prev,
-                      fecha: event.target.value,
-                    }))
-                  }
-                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900"
-                />
+                  id="fecha"
+                  type="date"
+                  required
+                  value={reservationForm.fecha}
+                  onChange={(event) =>
+                    setReservationForm((prev) => ({
+                      ...prev,
+                      fecha: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900"
+                  min={today} // AÑADIR ESTA LÍNEA
+                />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>

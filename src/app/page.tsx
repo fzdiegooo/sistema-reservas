@@ -70,7 +70,8 @@ export default function Home() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-medium text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:bg-white hover:text-primary hover:border hover:border-primary hover:scale-[1.03] hover:shadow-blue-500/20 focus:outline-none focus:ring focus:ring-primary/50 active:scale-95"
+                className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-medium text-white shadow-sm shadow-blue-500/30 transition-all duration-300 hover:bg-white hover:text-primary hover:border hover:border-primary hover:scale-[1.03] hover:shadow-sm focus:outline-none focus:ring focus:ring-primary/50 active:scale-95"
+                aria-label="Ingresar al panel administrativo"
               >
                 Ingresar al panel
               </Link>
@@ -78,9 +79,11 @@ export default function Home() {
               <Link
                 href="/register"
                 className="inline-flex items-center justify-center rounded-2xl border border-primary px-6 py-3 font-medium text-primary transition-all duration-300 hover:bg-primary hover:text-white hover:scale-[1.03] hover:border-primary focus:outline-none focus:ring focus:ring-primary/50 active:scale-95"
+                aria-label="Crear cuenta para docente"
               >
                 Crear cuenta docente
               </Link>
+
             </div>
           </div>
 
@@ -106,8 +109,9 @@ export default function Home() {
         {highlights.map((block) => (
           <article
             key={block.title}
-            className="rounded-3xl border border-white/60 bg-surface p-6 shadow-xl"
+            className="rounded-3xl border border-white/60 bg-surface p-6 shadow-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
           >
+
             <h3 className="text-xl sm:text-2xl font-semibold text-slate-900">{block.title}</h3>
             <ul className="mt-4 space-y-2 text-sm sm:text-base text-slate-600">
               {block.bullets.map((item) => (

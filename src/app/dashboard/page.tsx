@@ -198,11 +198,14 @@ export default function DashboardPage() {
     }
   };
 
+  
+
   const stats = [
-    { label: "Salas registradas", value: rooms.length },
+    { label: "Salas registradas", value: rooms.length ,icon: "🏠"},
     {
       label: isAdmin ? "Reservas totales" : "Mis reservas",
       value: history.length,
+      icon: "📅",
     },
     {
       label: "Próxima reserva",
@@ -211,6 +214,7 @@ export default function DashboardPage() {
             upcomingReservation.horaInicio
           )}`
         : "Sin pendientes",
+        icon: "⏳",
     },
   ];
 
@@ -266,8 +270,10 @@ export default function DashboardPage() {
             key={stat.label}
             className="rounded-3xl border border-white/40 bg-surface p-6 shadow-lg"
           >
+            <span className="text-2xl">{stat.icon}</span> {/* Mostrar ícono */}
             <p className="text-sm text-slate-500">{stat.label}</p>
             <p className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</p>
+            
           </article>
         ))}
       </div>

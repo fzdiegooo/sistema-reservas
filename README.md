@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Sistema de reservas escolares
 
-## Getting Started
+Interfaz en Next.js 16 que consume la API externa de reservas para colegios. Incluye flujos de autenticación, panel administrativo y panel de usuario final.
 
-First, run the development server:
+### Características clave
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Autenticación JWT**: login y registro (rol USER por defecto) consumiendo `/api/auth/*`.
+- **Gestión de salas**: alta, edición y baja desde `/api/salas` (solo ADMIN).
+- **Reservas**: creación, filtrado por fecha e históricos usando `/api/reservas*`.
+- **Contexto global**: almacenamiento seguro del token y rol en `localStorage`.
+- **UI responsiva**: dashboards diferenciados para ADMIN y USER.
+
+### Requisitos previos
+
+- Node.js 18.18+ o 20+.
+- Backend disponible con los endpoints descritos por el usuario.
+
+### Variables de entorno
+
+Crea un archivo `.env.local` en la raíz del proyecto e incluye la URL base del backend:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://tu-backend.com
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> El valor debe incluir protocolo y no llevar `/` al final (el código elimina el último slash automáticamente).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts disponibles
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev      # arranca el entorno de desarrollo
+npm run build    # genera la versión optimizada de producción
+npm run start    # sirve la build en modo producción
+npm run lint     # ejecuta ESLint sobre todo el proyecto
+```
 
-## Learn More
+### Flujo de trabajo
 
-To learn more about Next.js, take a look at the following resources:
+1. **Registro/Login**: usa `/register` o `/login` para obtener el JWT.
+2. **Dashboard**: `/dashboard` detecta el rol y despliega la vista correspondiente.
+3. **Gestión de salas** (ADMIN): crea, renombra o elimina salas y revisa el histórico completo.
+4. **Reservas de usuario** (USER): genera nuevas reservas y consulta el historial personal.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Integración con la API
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El cliente HTTP reside en `src/lib/api.ts` y usa siempre el host configurado mediante `NEXT_PUBLIC_API_BASE_URL`. Los endpoints consumidos son:
 
-## Deploy on Vercel
+| Método | Ruta | Descripción |
+| ------ | ---- | ----------- |
+| POST | `/api/auth/register` | Crea usuarios USER |
+| POST | `/api/auth/login` | Devuelve JWT y rol |
+| GET/POST/PUT/DELETE | `/api/salas` | CRUD de salas (ADMIN) |
+| POST | `/api/reservas` | Nueva reserva |
+| GET | `/api/reservas?fecha=YYYY-MM-DD` | Reservas por fecha |
+| GET | `/api/reservas/historico` | Histórico completo (ADMIN) |
+| GET | `/api/reservas/mis-reservas` | Historial del usuario |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Estructura relevante
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app/page.tsx`: landing y CTA hacia los flujos.
+- `src/app/(login|register)/page.tsx`: formularios con manejo de errores.
+- `src/app/dashboard/page.tsx`: tablero principal con gestión de salas y reservas.
+- `src/context/auth-context.tsx`: contexto de sesión y helpers.
+- `src/lib/api.ts`: cliente de la API REST.
+
+### Próximos pasos sugeridos
+
+- Conectar el backend real y validar los data contracts.
+- Añadir control granular de estados de reserva (aprobada, rechazada, etc.).
+- Incluir tests E2E o de componentes para los flujos críticos.

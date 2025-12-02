@@ -140,6 +140,17 @@ export default function DashboardPage() {
     });
   }, [history]);
 
+  const isInvalidTimeRange = useMemo(() => {
+    const { horaInicio, horaFin } = reservationForm;
+    
+    // Si falta alguna de las horas, no lo consideramos inválido todavía.
+    if (!horaInicio || !horaFin) return false;
+
+    // Es inválido si la hora de fin es igual o anterior a la hora de inicio.
+    // JavaScript puede comparar cadenas de tiempo ("10:00" <= "09:00" -> false)
+    return horaFin <= horaInicio;
+  }, [reservationForm.horaInicio, reservationForm.horaFin]);
+
   const handleCreateRoom = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!token) return;
@@ -496,8 +507,13 @@ export default function DashboardPage() {
                     }
                     className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900"
                   />
-                </div>
-              </div>
+                  {isInvalidTimeRange && ( // AÑADIR ESTE BLOQUE
+                  <p className="mt-2 text-xs text-rose-600">
+                    ⚠️ La hora de fin debe ser posterior a la hora de inicio.
+                  </p>
+                )}
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -601,7 +617,7 @@ export default function DashboardPage() {
             <button
               type="submit"
               className="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white"
-              disabled={!rooms.length}
+              disabled={!rooms.length || isInvalidTimeRange}
             >
               Crear reserva
             </button>

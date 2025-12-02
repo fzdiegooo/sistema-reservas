@@ -9,15 +9,16 @@ import { api } from "@/lib/api";
 import { CredentialsPayload, LoginResponse } from "@/lib/types";
 
 const apiConfigured = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
-
 const isProduction = process.env.NODE_ENV === "production"; 
 
 export default function LoginPage() {
   const router = useRouter();
   const { setSession } = useAuth();
   
+  const [showPassword, setShowPassword] = useState(false);
   
-  const [showPassword, setShowPassword] = useState(false); 
+  // NUEVO: Estado para el checkbox
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [form, setForm] = useState<CredentialsPayload>({
     username: "",
@@ -37,6 +38,8 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      // Nota: Aquí podrías enviar 'rememberMe' a tu API si el backend lo soporta
+      // Ejemplo: await api.login({ ...form, remember: rememberMe });
       const response: LoginResponse = await api.login(form);
       setSession(response);
       router.push("/dashboard");
@@ -49,17 +52,14 @@ export default function LoginPage() {
 
   return (
     <section className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50">
-      {}
+      {/* Fondo decorativo */}
       <div className="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-primary/10 blur-[100px]" />
       <div className="absolute -bottom-[10%] -right-[10%] h-[500px] w-[500px] rounded-full bg-blue-400/10 blur-[100px]" />
 
-      {}
       <div className="z-10 w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
         
-        {}
         <div className="mx-4 overflow-hidden rounded-3xl border border-white/50 bg-white/70 p-8 shadow-xl backdrop-blur-xl sm:px-10">
           
-          {}
           <div className="mb-6 flex justify-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/30">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 21v-8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -85,7 +85,6 @@ export default function LoginPage() {
                 Usuario
               </label>
               <div className="relative transition-all duration-300 focus-within:scale-[1.01]">
-                {}
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 group-focus-within:text-primary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
@@ -97,7 +96,6 @@ export default function LoginPage() {
                   autoComplete="username"
                   value={form.username}
                   onChange={handleChange("username")}
-                
                   className="w-full rounded-xl border border-slate-200 bg-white/50 pl-11 pr-4 py-3 text-sm text-slate-900 outline-none ring-offset-2 transition-all placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                   placeholder="Ej: coordinacion"
                 />
@@ -109,7 +107,6 @@ export default function LoginPage() {
                 Contraseña
               </label>
               <div className="relative transition-all duration-300 focus-within:scale-[1.01]">
-                {}
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 group-focus-within:text-primary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
@@ -122,7 +119,6 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={form.password}
                   onChange={handleChange("password")}
-                  
                   className="w-full rounded-xl border border-slate-200 bg-white/50 pl-11 pr-11 py-3 text-sm text-slate-900 outline-none ring-offset-2 transition-all placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                   placeholder="••••••••"
                 />
@@ -140,6 +136,24 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* --- NUEVO BLOQUE: Checkbox Recordarme --- */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                />
+                Recordarme
+              </label>
+              {/* Opcional: Link de olvidé contraseña alineado a la derecha */}
+              <Link href="#" className="text-sm font-medium text-primary hover:text-primary-strong hover:underline">
+                ¿Olvidaste tu clave?
+              </Link>
+            </div>
+            {/* ----------------------------------------- */}
 
             {error && (
               <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 animate-pulse">
@@ -173,7 +187,6 @@ export default function LoginPage() {
           </p>
         </div>
         
-        {}
         <p className="mt-8 text-center text-xs text-slate-400 opacity-60">
           © {new Date().getFullYear()} Sistema de Reservas. Todos los derechos reservados.
         </p>

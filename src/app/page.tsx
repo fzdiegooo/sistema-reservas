@@ -63,13 +63,14 @@ export default function Home() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-medium text-white shadow-lg shadow-blue-500/30 transition hover:bg-primary-strong"
+                className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-medium text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:bg-white hover:text-primary hover:border hover:border-primary hover:scale-[1.03] hover:shadow-blue-500/20"
               >
                 Ingresar al panel
               </Link>
+
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center rounded-2xl border border-primary px-6 py-3 font-medium text-primary transition hover:bg-white"
+                className="inline-flex items-center justify-center rounded-2xl border border-primary px-6 py-3 font-medium text-primary transition-all duration-300 hover:bg-primary hover:text-white hover:scale-[1.03] hover:border-primary"
               >
                 Crear cuenta docente
               </Link>

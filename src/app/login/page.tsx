@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState, KeyboardEvent, useRef } from "react"; // NUEVO: Importamos useRef
+import { FormEvent, useState, KeyboardEvent, useRef } from "react";
 
 import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
@@ -15,7 +15,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { setSession } = useAuth();
   
-  // Referencia para mantener el foco en el input de usuario
   const usernameRef = useRef<HTMLInputElement>(null);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -29,12 +28,15 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // NUEVO: Variable para saber si el formulario es válido
+  const isFormValid = form.username.trim() !== "" && form.password.trim() !== "";
+
   const handleChange = (field: keyof CredentialsPayload) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
+      if (error) setError(null); // Limpia el error apenas escriben
     };
 
-  // NUEVO: Función para limpiar el usuario y devolver el foco
   const handleClearUsername = () => {
     setForm((prev) => ({ ...prev, username: "" }));
     usernameRef.current?.focus();
@@ -50,6 +52,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!isFormValid) return; // Doble seguridad
+
     setLoading(true);
     setError(null);
 
@@ -106,17 +110,15 @@ export default function LoginPage() {
                   name="username"
                   type="text"
                   required
-                  autoFocus // NUEVO: Auto-foco al cargar
-                  ref={usernameRef} // NUEVO: Referencia para volver a enfocar
+                  autoFocus
+                  ref={usernameRef}
                   autoComplete="username"
                   value={form.username}
                   onChange={handleChange("username")}
-                  // Agregamos pr-11 para dar espacio al botón de borrar
                   className="w-full rounded-xl border border-slate-200 bg-white/50 pl-11 pr-11 py-3 text-sm text-slate-900 outline-none ring-offset-2 transition-all placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                   placeholder="Ej: coordinacion"
                 />
                 
-                {/* NUEVO: Botón 'X' para limpiar input si hay texto */}
                 {form.username.length > 0 && (
                   <button
                     type="button"
@@ -195,10 +197,15 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* MEJORA FINAL: Botón deshabilitado visualmente si no hay datos */}
             <button
               type="submit"
-              className="group relative w-full overflow-hidden rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-strong hover:shadow-primary/50 disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={loading}
+              className={`group relative w-full overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all ${
+                isFormValid && !loading
+                  ? "bg-primary shadow-primary/30 hover:bg-primary-strong hover:shadow-primary/50 cursor-pointer"
+                  : "bg-slate-300 shadow-none cursor-not-allowed opacity-80"
+              }`}
+              disabled={loading || !isFormValid}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
                 {loading && (

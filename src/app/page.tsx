@@ -47,12 +47,12 @@ export default function Home() {
   return (
     <main className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col gap-12 px-5 py-16 lg:py-24">
       <section className="glass-panel rounded-3xl p-10 text-center shadow-2xl md:text-left">
-        <p className="tag mx-auto mb-4 w-fit bg-surface-alt text-primary md:mx-0">
+        <p className="mx-auto mb-4 w-fit bg-surface-alt text-primary md:mx-0 text-5xl font-bold">
           Sistema integral de reservas escolares
         </p>
         <div className="grid gap-10 lg:grid-cols-[2fr,1fr] lg:items-center">
           <div className="space-y-6">
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
               Agenda los salones del colegio sin llamadas ni planillas.
             </h1>
             <p className="text-lg text-slate-600">
@@ -63,13 +63,14 @@ export default function Home() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-medium text-white shadow-lg shadow-blue-500/30 transition hover:bg-primary-strong"
+                className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-medium text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:bg-white hover:text-primary hover:border hover:border-primary hover:scale-[1.03] hover:shadow-blue-500/20"
               >
                 Ingresar al panel
               </Link>
+
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center rounded-2xl border border-primary px-6 py-3 font-medium text-primary transition hover:bg-white"
+                className="inline-flex items-center justify-center rounded-2xl border border-primary px-6 py-3 font-medium text-primary transition-all duration-300 hover:bg-primary hover:text-white hover:scale-[1.03] hover:border-primary"
               >
                 Crear cuenta docente
               </Link>

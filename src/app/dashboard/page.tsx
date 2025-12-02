@@ -721,6 +721,7 @@ export default function DashboardPage() {
                   </td>
                 </tr>
               ))}
+
               {!historyLoading && !history.length && (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
@@ -736,3 +737,4 @@ export default function DashboardPage() {
     </section>
   );
 }
+/* Pruebaaaaaaaaaa */

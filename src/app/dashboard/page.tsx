@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [reservationStatus, setReservationStatus] = useState<
     { type: "success" | "error"; message: string } | null
   >(null);
+  const [calendarLink, setCalendarLink] = useState<string | null>(null);
 
   useEffect(() => {
     if (!reservationStatus) return;
@@ -184,8 +185,25 @@ export default function DashboardPage() {
     event.preventDefault();
     if (!token) return;
     setReservationStatus(null);
+    setCalendarLink(null);
     try {
       await api.createReservation(token, reservationForm);
+      const roomName =
+        rooms.find((room) => room.id === reservationForm.salaId)?.nombre ||
+        "Sala reservada";
+      const startDate = buildCalendarDateTime(
+        reservationForm.fecha,
+        reservationForm.horaInicio
+      );
+      const endDate = buildCalendarDateTime(
+        reservationForm.fecha,
+        reservationForm.horaFin
+      );
+      if (startDate && endDate) {
+        const summary = `Reserva sala ${roomName}`;
+        const details = formatCalendarDetails(reservationForm, roomName);
+        setCalendarLink(createGoogleCalendarLink(summary, startDate, endDate, details));
+      }
       setReservationForm(createReservationForm());
       setReservationStatus({ type: "success", message: "Reserva generada" });
       loadHistory();
@@ -397,6 +415,16 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
+          {calendarLink && reservationStatus?.type === "success" && (
+            <a
+              href={calendarLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center justify-center rounded-2xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white"
+            >
+              Agregar a Google Calendar
+            </a>
+          )}
 
           <form className="mt-6 space-y-4" onSubmit={handleReservationSubmit}>
             <div>
@@ -736,3 +764,36 @@ export default function DashboardPage() {
     </section>
   );
 }
+
+const buildCalendarDateTime = (date: string, time: string) => {
+  if (!date || !time) return null;
+  const parsed = new Date(`${date}T${time}`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+};
+
+const createGoogleCalendarLink = (
+  summary: string,
+  start: string,
+  end: string,
+  details: string
+) => {
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: summary,
+    dates: `${start}/${end}`,
+    details,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
+const formatCalendarDetails = (reservation: ReservationPayload, roomName: string) => {
+  const parts = [
+    `Sala: ${roomName}`,
+    `Encargado: ${reservation.nombresEncargado} ${reservation.apellidosEncargado}`,
+    `DNI: ${reservation.dniEncargado}`,
+  ];
+  if (reservation.asistentes) parts.push(`Asistentes: ${reservation.asistentes}`);
+  if (reservation.descripcion) parts.push(`Descripción: ${reservation.descripcion}`);
+  return parts.join("\n");
+};

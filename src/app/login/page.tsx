@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, KeyboardEvent } from "react";
 
 import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
@@ -16,9 +16,10 @@ export default function LoginPage() {
   const { setSession } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
-  
-  // NUEVO: Estado para el checkbox
   const [rememberMe, setRememberMe] = useState(false);
+  
+  // NUEVO: Estado para detectar mayúsculas
+  const [capsLockOn, setCapsLockOn] = useState(false);
 
   const [form, setForm] = useState<CredentialsPayload>({
     username: "",
@@ -32,14 +33,21 @@ export default function LoginPage() {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
 
+  // NUEVO: Función para detectar si Bloq Mayús está activo
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.getModifierState("CapsLock")) {
+      setCapsLockOn(true);
+    } else {
+      setCapsLockOn(false);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Nota: Aquí podrías enviar 'rememberMe' a tu API si el backend lo soporta
-      // Ejemplo: await api.login({ ...form, remember: rememberMe });
       const response: LoginResponse = await api.login(form);
       setSession(response);
       router.push("/dashboard");
@@ -52,7 +60,6 @@ export default function LoginPage() {
 
   return (
     <section className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50">
-      {/* Fondo decorativo */}
       <div className="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-primary/10 blur-[100px]" />
       <div className="absolute -bottom-[10%] -right-[10%] h-[500px] w-[500px] rounded-full bg-blue-400/10 blur-[100px]" />
 
@@ -119,6 +126,8 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={form.password}
                   onChange={handleChange("password")}
+                  // NUEVO: Evento onKeyUp para detectar tecla
+                  onKeyUp={handleKeyDown} 
                   className="w-full rounded-xl border border-slate-200 bg-white/50 pl-11 pr-11 py-3 text-sm text-slate-900 outline-none ring-offset-2 transition-all placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                   placeholder="••••••••"
                 />
@@ -135,9 +144,17 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+
+              {/* --- NUEVO BLOQUE: Alerta de Mayúsculas --- */}
+              {capsLockOn && (
+                <div className="mt-2 flex items-center gap-2 text-xs font-medium text-amber-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 2v6h6M2.66 15.57 10 30 22 7.08"/><line x1="12" x2="12" y1="3" y2="12"/></svg>
+                  <span>Bloq Mayús activado</span>
+                </div>
+              )}
+              {/* ------------------------------------------ */}
             </div>
 
-            {/* --- NUEVO BLOQUE: Checkbox Recordarme --- */}
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
                 <input 
@@ -148,12 +165,10 @@ export default function LoginPage() {
                 />
                 Recordarme
               </label>
-              {/* Opcional: Link de olvidé contraseña alineado a la derecha */}
               <Link href="#" className="text-sm font-medium text-primary hover:text-primary-strong hover:underline">
                 ¿Olvidaste tu clave?
               </Link>
             </div>
-            {/* ----------------------------------------- */}
 
             {error && (
               <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 animate-pulse">

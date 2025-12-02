@@ -77,15 +77,15 @@ export default function Home() {
             </div>
           </div>
           <div className="space-y-4 rounded-2xl border border-white/60 bg-surface p-6 shadow-xl">
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Roles</p>
+            <p className="text-2xl font-semibold uppercase tracking-[0.3em] text-slate-400">Roles</p>
             <div className="flex flex-col gap-4">
               <div className="rounded-2xl bg-slate-900/90 p-4 text-white">
-                <p className="text-sm text-slate-300">Administrador</p>
-                <p className="text-2xl font-semibold">Control total de salas</p>
+                <p className="text-2xl font-semibold text-slate-300">Administrador</p>
+                <p className="text-1xl font-semibold">Control total de salas</p>
               </div>
               <div className="rounded-2xl bg-blue-100 p-4">
-                <p className="text-sm text-blue-700">Usuario</p>
-                <p className="text-xl font-semibold text-blue-900">Reservas en segundos</p>
+                <p className="text-2xl font-semibold text-blue-700">Usuario</p>
+                <p className="text-1xl font-semibold text-blue-900">Reservas en segundos</p>
               </div>
             </div>
           </div>

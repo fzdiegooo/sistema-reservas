@@ -42,6 +42,8 @@ export default function LoginPage() {
   };
 
   return (
+    
+
     <section className="mx-auto flex min-h-[calc(100vh-6rem)] w-full max-w-xl flex-col justify-center px-4 py-12">
       <div className="glass-panel rounded-3xl p-8">
         <p className="tag mb-4 bg-surface-alt text-primary">Ingreso seguro</p>

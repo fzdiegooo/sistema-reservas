@@ -6,6 +6,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
 import { Reservation, ReservationPayload, Room } from "@/lib/types";
+import ToastNotification from "@/app/ui/ToastNotification";
 
 const reservationTemplate: ReservationPayload = {
   salaId: "",
@@ -197,6 +198,13 @@ export default function DashboardPage() {
       });
     }
   };
+
+ 
+  const handleCloseToast = () => {
+    setReservationStatus(null);
+  };
+
+// ...
 
   
 
@@ -739,6 +747,15 @@ export default function DashboardPage() {
         </div>
         </section>
       )}
-    </section>
-  );
+
+      {reservationStatus && (
+        <ToastNotification
+          type={reservationStatus.type}
+          message={reservationStatus.message}
+          isVisible={!!reservationStatus} // Es visible si reservationStatus NO es null
+          onClose={handleCloseToast}
+        />
+      )}
+    </section>
+  );
 }

@@ -6,6 +6,9 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
 import { Reservation, ReservationPayload, Room } from "@/lib/types";
+import ToastNotification from "@/app/ui/ToastNotification";
+
+const today = new Date().toISOString().split('T')[0];
 
 const reservationTemplate: ReservationPayload = {
   salaId: "",
@@ -137,6 +140,17 @@ export default function DashboardPage() {
     });
   }, [history]);
 
+  const isInvalidTimeRange = useMemo(() => {
+    const { horaInicio, horaFin } = reservationForm;
+    
+    // Si falta alguna de las horas, no lo consideramos inválido todavía.
+    if (!horaInicio || !horaFin) return false;
+
+    // Es inválido si la hora de fin es igual o anterior a la hora de inicio.
+    // JavaScript puede comparar cadenas de tiempo ("10:00" <= "09:00" -> false)
+    return horaFin <= horaInicio;
+  }, [reservationForm.horaInicio, reservationForm.horaFin]);
+
   const handleCreateRoom = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!token) return;
@@ -198,11 +212,21 @@ export default function DashboardPage() {
     }
   };
 
+ 
+  const handleCloseToast = () => {
+    setReservationStatus(null);
+  };
+
+// ...
+
+  
+
   const stats = [
-    { label: "Salas registradas", value: rooms.length },
+    { label: "Salas registradas", value: rooms.length ,icon: "🏠"},
     {
       label: isAdmin ? "Reservas totales" : "Mis reservas",
       value: history.length,
+      icon: "📅",
     },
     {
       label: "Próxima reserva",
@@ -211,6 +235,7 @@ export default function DashboardPage() {
             upcomingReservation.horaInicio
           )}`
         : "Sin pendientes",
+        icon: "⏳",
     },
   ];
 
@@ -266,8 +291,10 @@ export default function DashboardPage() {
             key={stat.label}
             className="rounded-3xl border border-white/40 bg-surface p-6 shadow-lg"
           >
+            <span className="text-2xl">{stat.icon}</span> {/* Mostrar ícono */}
             <p className="text-sm text-slate-500">{stat.label}</p>
             <p className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</p>
+            
           </article>
         ))}
       </div>
@@ -430,18 +457,19 @@ export default function DashboardPage() {
                   Fecha
                 </label>
                 <input
-                  id="fecha"
-                  type="date"
-                  required
-                  value={reservationForm.fecha}
-                  onChange={(event) =>
-                    setReservationForm((prev) => ({
-                      ...prev,
-                      fecha: event.target.value,
-                    }))
-                  }
-                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900"
-                />
+                  id="fecha"
+                  type="date"
+                  required
+                  value={reservationForm.fecha}
+                  onChange={(event) =>
+                    setReservationForm((prev) => ({
+                      ...prev,
+                      fecha: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900"
+                  min={today} // AÑADIR ESTA LÍNEA
+                />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
@@ -479,8 +507,13 @@ export default function DashboardPage() {
                     }
                     className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900"
                   />
-                </div>
-              </div>
+                  {isInvalidTimeRange && ( // AÑADIR ESTE BLOQUE
+                  <p className="mt-2 text-xs text-rose-600">
+                    ⚠️ La hora de fin debe ser posterior a la hora de inicio.
+                  </p>
+                )}
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -584,7 +617,7 @@ export default function DashboardPage() {
             <button
               type="submit"
               className="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white"
-              disabled={!rooms.length}
+              disabled={!rooms.length || isInvalidTimeRange}
             >
               Crear reserva
             </button>
@@ -733,6 +766,15 @@ export default function DashboardPage() {
         </div>
         </section>
       )}
-    </section>
-  );
+
+      {reservationStatus && (
+        <ToastNotification
+          type={reservationStatus.type}
+          message={reservationStatus.message}
+          isVisible={!!reservationStatus} // Es visible si reservationStatus NO es null
+          onClose={handleCloseToast}
+        />
+      )}
+    </section>
+  );
 }

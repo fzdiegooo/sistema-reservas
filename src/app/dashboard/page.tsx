@@ -7,6 +7,23 @@ import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
 import { Reservation, ReservationPayload, Room } from "@/lib/types";
 
+type BrowserNotificationPermission = "default" | "denied" | "granted";
+
+interface LocalReminder {
+  id: string;
+  reservationId: string;
+  triggerAt: number;
+  minutesBefore: number;
+  sala: string;
+  fecha: string;
+  horaInicio?: string;
+  fired?: boolean;
+}
+
+const REMINDER_STORAGE_KEY = "dashboard-reservation-reminders";
+const REMINDER_INTERVAL = 15_000;
+const REMINDER_OPTIONS = [5, 15, 30, 60];
+
 const reservationTemplate: ReservationPayload = {
   salaId: "",
   fecha: "",
@@ -58,12 +75,46 @@ export default function DashboardPage() {
   const [calendarModalOpen, setCalendarModalOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [reservationDetailModalOpen, setReservationDetailModalOpen] = useState(false);
+  const [reminders, setReminders] = useState<LocalReminder[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = window.localStorage.getItem(REMINDER_STORAGE_KEY);
+      return stored ? (JSON.parse(stored) as LocalReminder[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [reminderAlert, setReminderAlert] = useState<string | null>(null);
+  const [selectedReminderMinutes, setSelectedReminderMinutes] = useState<number>(15);
+  const [notificationSupported, setNotificationSupported] = useState(false);
+  const [notificationPermission, setNotificationPermission] =
+    useState<BrowserNotificationPermission>("default");
 
   useEffect(() => {
     if (!reservationStatus) return;
     const timer = window.setTimeout(() => setReservationStatus(null), 4000);
     return () => window.clearTimeout(timer);
   }, [reservationStatus]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(reminders));
+  }, [reminders]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const supported = "Notification" in window;
+    setNotificationSupported(supported);
+    if (supported) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!reminderAlert) return;
+    const timer = window.setTimeout(() => setReminderAlert(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [reminderAlert]);
 
   const [historyDate, setHistoryDate] = useState<string>("");
   const [history, setHistory] = useState<Reservation[]>([]);
@@ -141,8 +192,66 @@ export default function DashboardPage() {
     });
   }, [history]);
 
+  const activeReminder = useMemo(() => {
+    if (!selectedReservation) return null;
+    const reservationId = String(selectedReservation.id);
+    return (
+      reminders.find(
+        (reminder) => reminder.reservationId === reservationId && !reminder.fired
+      ) ?? null
+    );
+  }, [reminders, selectedReservation]);
+
+  const fireReminder = useCallback(
+    (reminder: LocalReminder) => {
+      const message = `Reserva en ${reminder.sala} a las ${formatHour(
+        reminder.horaInicio
+      )} (${formatDate(reminder.fecha)})`;
+      if (
+        typeof window !== "undefined" &&
+        notificationSupported &&
+        notificationPermission === "granted"
+      ) {
+        try {
+          new Notification("Recordatorio de reserva", {
+            body: message,
+          });
+          return;
+        } catch {
+          // fall through to alert toast
+        }
+      }
+      setReminderAlert(message);
+    },
+    [notificationPermission, notificationSupported]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const interval = window.setInterval(() => {
+      setReminders((current) => {
+        if (!current.length) return current;
+        const now = Date.now();
+        let mutated = false;
+        const next = current.map((reminder) => {
+          if (reminder.fired || reminder.triggerAt > now) return reminder;
+          fireReminder(reminder);
+          mutated = true;
+          return { ...reminder, fired: true };
+        });
+        return mutated ? next.filter((reminder) => !reminder.fired) : current;
+      });
+    }, REMINDER_INTERVAL);
+    return () => window.clearInterval(interval);
+  }, [fireReminder]);
+
   const showReservationDetail = (reservation: Reservation) => {
     setSelectedReservation(reservation);
+    const reservationId = String(reservation.id);
+    const existingReminder = reminders.find(
+      (reminder) => reminder.reservationId === reservationId && !reminder.fired
+    );
+    setSelectedReminderMinutes(existingReminder?.minutesBefore ?? 15);
     setReservationDetailModalOpen(true);
   };
 
@@ -150,6 +259,57 @@ export default function DashboardPage() {
     setReservationDetailModalOpen(false);
     setSelectedReservation(null);
   };
+
+  const handleScheduleReminder = useCallback(async () => {
+    if (!selectedReservation) return;
+    const startTimestamp = getReservationStartTimestamp(
+      selectedReservation.fecha,
+      selectedReservation.horaInicio
+    );
+    if (!startTimestamp) {
+      setReminderAlert("No se pudo programar el recordatorio (fecha/horario inválido).");
+      return;
+    }
+    const triggerAt = startTimestamp - selectedReminderMinutes * 60_000;
+    if (triggerAt <= Date.now()) {
+      setReminderAlert("Selecciona un recordatorio con tiempo suficiente antes del inicio.");
+      return;
+    }
+    if (
+      typeof window !== "undefined" &&
+      notificationSupported &&
+      notificationPermission === "default" &&
+      "Notification" in window
+    ) {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+    }
+    const reminder: LocalReminder = {
+      id: `${selectedReservation.id}-${selectedReminderMinutes}`,
+      reservationId: String(selectedReservation.id),
+      triggerAt,
+      minutesBefore: selectedReminderMinutes,
+      sala: selectedReservation.sala?.nombre ?? "Sala reservada",
+      fecha: selectedReservation.fecha,
+      horaInicio: selectedReservation.horaInicio,
+    };
+    setReminders((prev) => {
+      const filtered = prev.filter((item) => item.id !== reminder.id);
+      return [...filtered, reminder];
+    });
+    setReminderAlert(`Recordatorio programado (${selectedReminderMinutes} min antes).`);
+  }, [
+    notificationPermission,
+    notificationSupported,
+    selectedReminderMinutes,
+    selectedReservation,
+  ]);
+
+  const handleRemoveReminder = useCallback(() => {
+    if (!activeReminder) return;
+    setReminders((prev) => prev.filter((reminder) => reminder.id !== activeReminder.id));
+    setReminderAlert("Recordatorio eliminado.");
+  }, [activeReminder]);
 
   const handleCreateRoom = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -257,6 +417,11 @@ export default function DashboardPage() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
+      {reminderAlert && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-3xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-2xl">
+          {reminderAlert}
+        </div>
+      )}
       <header className="flex flex-col gap-4 rounded-3xl border border-white/40 bg-surface p-6 shadow-xl md:flex-row md:items-center md:justify-between">
         <div>
           <p className="tag mb-2 bg-surface-alt text-primary">
@@ -881,6 +1046,53 @@ export default function DashboardPage() {
                 </p>
               </div>
             )}
+
+            <div className="mt-6 rounded-3xl border border-dashed border-slate-200 px-4 py-4">
+              <p className="text-xs font-semibold uppercase text-slate-500">Recordatorio local</p>
+              <p className="mt-2 text-sm text-slate-600">
+                Recibirás un aviso en este dispositivo {notificationSupported ? "cuando llegue el momento seleccionado." : "dentro de la app (las notificaciones del navegador no están disponibles)."}
+              </p>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <select
+                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-900"
+                  value={selectedReminderMinutes}
+                  onChange={(event) => setSelectedReminderMinutes(Number(event.target.value))}
+                >
+                  {REMINDER_OPTIONS.map((minutes) => (
+                    <option key={minutes} value={minutes}>
+                      {minutes} minutos antes
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-strong"
+                  onClick={handleScheduleReminder}
+                  disabled={!selectedReservation}
+                >
+                  Programar
+                </button>
+                {activeReminder && (
+                  <button
+                    type="button"
+                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+                    onClick={handleRemoveReminder}
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
+              {activeReminder && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Recordatorio activo: {activeReminder.minutesBefore} min antes · {formatReminderTarget(activeReminder.triggerAt)}
+                </p>
+              )}
+              {notificationSupported && notificationPermission === "denied" && (
+                <p className="mt-2 text-xs text-rose-600">
+                  Las notificaciones están bloqueadas por el navegador; habilítalas para recibir avisos fuera de la app.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -919,4 +1131,20 @@ const formatCalendarDetails = (reservation: ReservationPayload, roomName: string
   if (reservation.asistentes) parts.push(`Asistentes: ${reservation.asistentes}`);
   if (reservation.descripcion) parts.push(`Descripción: ${reservation.descripcion}`);
   return parts.join("\n");
+};
+
+const getReservationStartTimestamp = (date?: string, time?: string) => {
+  if (!date || !time) return null;
+  const parsed = new Date(`${date}T${time}`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.getTime();
+};
+
+const formatReminderTarget = (timestamp: number) => {
+  const parsed = new Date(timestamp);
+  if (Number.isNaN(parsed.getTime())) return "--:--";
+  return parsed.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };

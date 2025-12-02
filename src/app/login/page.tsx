@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState, KeyboardEvent } from "react";
+import { FormEvent, useState, KeyboardEvent, useRef } from "react"; // NUEVO: Importamos useRef
 
 import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
@@ -15,10 +15,11 @@ export default function LoginPage() {
   const router = useRouter();
   const { setSession } = useAuth();
   
+  // Referencia para mantener el foco en el input de usuario
+  const usernameRef = useRef<HTMLInputElement>(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  
-  // NUEVO: Estado para detectar mayúsculas
   const [capsLockOn, setCapsLockOn] = useState(false);
 
   const [form, setForm] = useState<CredentialsPayload>({
@@ -33,7 +34,12 @@ export default function LoginPage() {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
 
-  // NUEVO: Función para detectar si Bloq Mayús está activo
+  // NUEVO: Función para limpiar el usuario y devolver el foco
+  const handleClearUsername = () => {
+    setForm((prev) => ({ ...prev, username: "" }));
+    usernameRef.current?.focus();
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.getModifierState("CapsLock")) {
       setCapsLockOn(true);
@@ -100,12 +106,27 @@ export default function LoginPage() {
                   name="username"
                   type="text"
                   required
+                  autoFocus // NUEVO: Auto-foco al cargar
+                  ref={usernameRef} // NUEVO: Referencia para volver a enfocar
                   autoComplete="username"
                   value={form.username}
                   onChange={handleChange("username")}
-                  className="w-full rounded-xl border border-slate-200 bg-white/50 pl-11 pr-4 py-3 text-sm text-slate-900 outline-none ring-offset-2 transition-all placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
+                  // Agregamos pr-11 para dar espacio al botón de borrar
+                  className="w-full rounded-xl border border-slate-200 bg-white/50 pl-11 pr-11 py-3 text-sm text-slate-900 outline-none ring-offset-2 transition-all placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                   placeholder="Ej: coordinacion"
                 />
+                
+                {/* NUEVO: Botón 'X' para limpiar input si hay texto */}
+                {form.username.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearUsername}
+                    className="absolute right-0 top-0 h-full px-4 text-slate-400 hover:text-rose-500 transition animate-in fade-in zoom-in duration-200"
+                    aria-label="Borrar usuario"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -126,7 +147,6 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={form.password}
                   onChange={handleChange("password")}
-                  // NUEVO: Evento onKeyUp para detectar tecla
                   onKeyUp={handleKeyDown} 
                   className="w-full rounded-xl border border-slate-200 bg-white/50 pl-11 pr-11 py-3 text-sm text-slate-900 outline-none ring-offset-2 transition-all placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                   placeholder="••••••••"
@@ -145,14 +165,12 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              {/* --- NUEVO BLOQUE: Alerta de Mayúsculas --- */}
               {capsLockOn && (
-                <div className="mt-2 flex items-center gap-2 text-xs font-medium text-amber-600">
+                <div className="mt-2 flex items-center gap-2 text-xs font-medium text-amber-600 animate-pulse">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 2v6h6M2.66 15.57 10 30 22 7.08"/><line x1="12" x2="12" y1="3" y2="12"/></svg>
                   <span>Bloq Mayús activado</span>
                 </div>
               )}
-              {/* ------------------------------------------ */}
             </div>
 
             <div className="flex items-center justify-between">
